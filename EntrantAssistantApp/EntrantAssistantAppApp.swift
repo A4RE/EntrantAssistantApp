@@ -11,7 +11,11 @@ import SwiftUI
 struct EntrantAssistantAppApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if UserDefaults.standard.string(forKey: "UserID") != nil {
+                TabBarView()
+            } else {
+                AuthView()
+            }
         }
     }
 }

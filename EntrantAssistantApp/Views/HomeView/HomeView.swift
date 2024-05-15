@@ -9,18 +9,23 @@ import SwiftUI
 
 struct HomeView: View {
     
-    let unis = MockData.getAllUnis()
+    @ObservedObject var homeViewModel = HomeViewViewModel()
+    @State private var searchText = ""
     
     var body: some View {
-        VStack {
-            header
-            Spacer()
-            List {
-                ForEach(unis, id: \.self) { uniInfo in
-                    UniRow(uniInfo: uniInfo)
-                }
+        NavigationView {
+            VStack {
+                header
+                Spacer()
+                list
             }
-            .listStyle(.plain)
+            .gesture(DragGesture().onChanged({ _ in
+                self.endEditing()
+            }))
+        }
+        .padding(0)
+        .onAppear {
+            homeViewModel.fetchUniversities()
         }
     }
 }
@@ -28,21 +33,29 @@ struct HomeView: View {
 extension HomeView {
     
     var header: some View {
-        HStack(alignment: .center) {
-            CustomButton(image: "magnifyingglass") {
-                print(1)
-            }
-            Spacer()
+        VStack(alignment: .center) {
             Text("Список вузов")
                 .fontDesign(.rounded)
                 .fontWeight(.regular)
                 .font(.title)
-            Spacer()
-            CustomButton(image: "line.3.horizontal.decrease") {
-                print(1)
-            }
+            TextField("Поиск", text: $searchText)
+                .textFieldStyle(.roundedBorder)
+                .onChange(of: searchText, initial: true, { _, newValue in
+                    homeViewModel.searchText = newValue
+                })
         }
         .padding(.horizontal, 16.adjustSize())
+    }
+    
+    var list: some View {
+        List {
+            ForEach(homeViewModel.universities, id: \.self) { uniInfo in
+                NavigationLink(destination: UniDetailView(universityId: uniInfo.id)) {
+                    UniRow(uniInfo: uniInfo)
+                }
+            }
+        }
+        .listStyle(.plain)
     }
 }
 
@@ -55,7 +68,7 @@ struct CustomButton: View {
         Circle()
             .frame(width: 40.adjustSize(), height: 40.adjustSize())
             .foregroundColor(.white)
-            .shadow(color: .secondary.opacity(0.5), radius: 3.adjustSize(), x: /*@START_MENU_TOKEN@*/0.0/*@END_MENU_TOKEN@*/, y: /*@START_MENU_TOKEN@*/0.0/*@END_MENU_TOKEN@*/)
+            .shadow(color: .secondary.opacity(0.5), radius: 3.adjustSize(), x: 0.0, y: 0.0)
             .overlay(alignment: .center) {
                 Button(action: action, label: {
                     Image(systemName: image)
@@ -70,34 +83,44 @@ struct CustomButton: View {
 
 struct UniRow: View {
     
-    let uniInfo: UniInfoStruct
+    let uniInfo: University
     
     var body: some View {
+        let baseURL = URL(fileURLWithPath: "/Users/a4rek0v/Documents/Магистратура/Методология и технология проектирования информационных систем/КР/UniSearch")
+        let imagePath = String(uniInfo.bigPhoto.dropFirst()) // Удаляем первый символ из строки
+        let fullURL = baseURL.appendingPathComponent(imagePath)
         
-        VStack(alignment: .leading, spacing: 5) {
-            Image(uniInfo.image)
+        let image: Image
+        if let uiImage = UIImage(contentsOfFile: fullURL.path) {
+            image = Image(uiImage: uiImage)
+        } else {
+            image = Image("example")
+        }
+        
+        return VStack(alignment: .leading, spacing: 5.adjustSize()) {
+            image
                 .resizable()
-                .frame(height: 180.adjustSize(), alignment: .center)
-                .aspectRatio(contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 10.adjustSize()))
+                .frame(height: 400)
+                .scaledToFit()
                 .overlay(alignment: .topLeading) {
                     HStack {
                         Image(systemName: "location.fill")
-                        Text(uniInfo.locationName)
+                        Text(uniInfo.address ?? "Санкт-Петербург")
                             .fontWeight(.regular)
+                            .font(.system(size: 12.adjustSize()))
                     }
                     .padding(8.adjustSize())
                     .background(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 10.adjustSize()))
                     .padding(5.adjustSize())
                 }
+            
             Text(uniInfo.name)
                 .font(.headline)
-            Text("Позиция в рейтинге: \(uniInfo.rating)")
-                .font(.subheadline)
         }
     }
 }
+
 
 #Preview {
     HomeView()
