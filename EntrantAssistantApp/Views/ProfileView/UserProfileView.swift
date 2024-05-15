@@ -11,6 +11,9 @@ struct UserProfileView: View {
     
     @StateObject private var profileViewModel = ProfileViewModel()
     @State private var userID = String()
+    @State private var isUniesExpanded = false
+    @State private var isProgramsExpanded = false
+    @State private var isExamsExpended = false
     
     var body: some View {
         NavigationView {
@@ -18,12 +21,24 @@ struct UserProfileView: View {
                 LazyVStack(alignment: .leading, spacing: 16.adjustSize()) {
                     if let userDetail = profileViewModel.userDetail {
                         topUserInfo(userDetail: userDetail)
-                        userSubjects
-                        subjectsList(exams: userDetail.exams)
-                        selectedUniesLabel
-                        selectedUniesList(unis: userDetail.unis)
-                        selectedProgramsLabel
-                        selectedProgramsList(programs: userDetail.programs)
+                        DisclosureGroup(isExpanded: $isExamsExpended) {
+                            subjectsList(exams: userDetail.exams)
+                        } label: {
+                            userSubjects
+                                .tint(.black)
+                        }
+                        DisclosureGroup(isExpanded: $isUniesExpanded) {
+                            selectedUniesList(unis: userDetail.unis)
+                        } label: {
+                            selectedUniesLabel
+                                .tint(.black)
+                        }
+                        DisclosureGroup(isExpanded: $isProgramsExpanded) {
+                            selectedProgramsList(programs: userDetail.programs)
+                        } label: {
+                            selectedProgramsLabel
+                                .tint(.black)
+                        }
                     } else if let errorMessage = profileViewModel.errorMessage {
                         Text(errorMessage)
                     } else {
@@ -65,6 +80,7 @@ extension UserProfileView {
                 .frame(width: 50.adjustSize(), height: 50.adjustSize())
             VStack(alignment: .leading) {
                 Text("\(userDetail.name)")
+                Text("\(userDetail.birthdate)")
             }
             Spacer()
             VStack {
@@ -84,7 +100,7 @@ extension UserProfileView {
     }
     
     func subjectsList(exams: [Exam]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8.adjustSize()) {
             ForEach(exams, id: \.id) { exam in
                 subjectCell(exam: exam)
             }
@@ -118,10 +134,11 @@ extension UserProfileView {
     }
     
     func selectedUniesList(unis: [Uni]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8.adjustSize()) {
             ForEach(unis, id: \.id) { uni in
                 Text(uni.name)
-                    .font(.headline)
+                    .font(.subheadline)
+                    .padding(.vertical, 12)
             }
         }
         .listStyle(.plain)
@@ -134,7 +151,7 @@ extension UserProfileView {
     }
     
     func selectedProgramsList(programs: [Prog]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8.adjustSize()) {
             ForEach(programs, id: \.code) { program in
                 programCell(program: program)
             }
@@ -143,26 +160,24 @@ extension UserProfileView {
     }
     
     func programCell(program: Prog) -> some View {
-        HStack(alignment: .top) {
+        HStack {
             VStack(alignment: .leading, spacing: 8.adjustSize()) {
-                Text("Название программы")
+                Text("Код программы")
                     .font(.subheadline)
-                Text(program.name)
+                Text(program.code)
                     .font(.headline)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 8.adjustSize()) {
-                Text("Код программы")
+                Text("Название программы")
                     .font(.subheadline)
-                Text(program.code)
+                Text(program.name)
                     .font(.headline)
             }
         }
         .padding(.vertical, 12)
     }
 }
-
-
 #Preview {
     UserProfileView()
 }
